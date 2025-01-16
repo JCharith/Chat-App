@@ -33,11 +33,22 @@ export const useChatStore = create((set, get) => ({
       set({ isMessagesLoading: false });
     }
   },
+
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     try {
       const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
       set({ messages: [...messages, res.data] });
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  },
+
+  deleteMessages: async (userId) => {
+    try {
+      await axiosInstance.delete(`/messages/${userId}`);
+      set({ messages: [] }); // Clear messages from the store
+      toast.success("Chat deleted successfully");
     } catch (error) {
       toast.error(error.response.data.message);
     }
