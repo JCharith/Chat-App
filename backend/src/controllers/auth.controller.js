@@ -28,7 +28,7 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      generateToken(newUser._id, res); // ✅ Fixed: Pass `res`
+      const token = generateToken(newUser._id, res); // ✅ Fixed: Ensure token is generated
       await newUser.save();
 
       res.status(201).json({
@@ -36,11 +36,13 @@ export const signup = async (req, res) => {
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
+        token, // ✅ Fixed: Ensure token is included in response
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
     }
   } catch (error) {
+    console.error("❌ Signup error:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -59,15 +61,17 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, res); // ✅ Fixed: Pass `res`
+    const token = generateToken(user._id, res); // ✅ Fixed: Ensure token is generated
 
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      token, // ✅ Fixed: Ensure token is included in response
     });
   } catch (error) {
+    console.error("❌ Login error:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
