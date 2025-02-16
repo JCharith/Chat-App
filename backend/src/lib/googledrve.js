@@ -14,40 +14,36 @@ oauth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN });
 
 const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-export const uploadFile = async (filePath, fileName) => {
-  const fileMetadata = {
-    name: fileName,
-    parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
-  };
-  const media = {
-    mimeType: "application/octet-stream",
-    body: fs.createReadStream(filePath)
-  };
+export const uploadChatBackup = async (chatData, userId) => {
+  const fileName = `chat_backup_${userId}_${Date.now()}.json`;
+  const filePath = `./backups/${fileName}`;
 
   try {
+    if (!fs.existsSync("./backups")) {
+      fs.mkdirSync("./backups");
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(chatData, null, 2));
+
+    const fileMetadata = {
+      name: fileName,
+      parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
+    };
+    const media = {
+      mimeType: "application/json",
+      body: fs.createReadStream(filePath)
+    };
+
     const response = await drive.files.create({
       resource: fileMetadata,
       media,
       fields: "id"
     });
-    console.log("File uploaded successfully:", response.data.id);
+
+    console.log(`✅ Chat backup uploaded! File ID: ${response.data.id}`);
     return response.data.id;
   } catch (error) {
-    console.error("Error uploading file to Google Drive:", error.message);
-    throw error;
-  }
-};
-
-export const listFiles = async () => {
-  try {
-    const response = await drive.files.list({
-      pageSize: 10,
-      fields: "files(id, name)"
-    });
-    console.log("Files:", response.data.files);
-    return response.data.files;
-  } catch (error) {
-    console.error("Error listing files from Google Drive:", error.message);
+    console.error("❌ Error uploading chat backup:", error.message);
     throw error;
   }
 };
