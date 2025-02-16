@@ -28,7 +28,7 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      const token = generateToken(newUser._id);
+      generateToken(newUser._id, res); // ✅ Fixed: Pass `res`
       await newUser.save();
 
       res.status(201).json({
@@ -36,7 +36,6 @@ export const signup = async (req, res) => {
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
-        token,
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -60,14 +59,13 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken(user._id);
+    generateToken(user._id, res); // ✅ Fixed: Pass `res`
 
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
-      token,
     });
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error" });
