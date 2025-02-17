@@ -15,7 +15,7 @@ dotenv.config();
 const PORT = process.env.PORT;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = "http://localhost:5001";
+const REDIRECT_URI = "http://localhost:5001/oauth/google/callback";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,8 +44,8 @@ app.get("/oauth/google/callback", async (req, res) => {
     // Exchange authorization code for access & refresh tokens
     const response = await axios.post("https://oauth2.googleapis.com/token", null, {
       params: {
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
         code,
         grant_type: "authorization_code",
         redirect_uri: REDIRECT_URI, // Must match Google Cloud Console
