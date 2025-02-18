@@ -5,6 +5,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
+import jwt from "jsonwebtoken";
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
@@ -15,6 +16,7 @@ dotenv.config();
 const PORT = process.env.PORT;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 const REDIRECT_URI = "http://localhost:5001/oauth/google/callback";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,39 +34,66 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// ✅ Route to handle Google OAuth callback
 app.get("/oauth/google/callback", async (req, res) => {
-  const code = req.query.code; // Extract authorization code from URL
+  const code = req.query.code;
 
   if (!code) {
     return res.status(400).json({ error: "Authorization code is missing" });
   }
 
   try {
-    // Exchange authorization code for access & refresh tokens
     const response = await axios.post("https://oauth2.googleapis.com/token", null, {
       params: {
-        client_id: process.env.CLIENT_ID,
-        client_secret: process.env.CLIENT_SECRET,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
         code,
         grant_type: "authorization_code",
-        redirect_uri: REDIRECT_URI, // Must match Google Cloud Console
+        redirect_uri: REDIRECT_URI,
       },
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token, id_token } = response.data;
 
-    console.log("✅ Access Token:", access_token);
-    console.log("🔄 Refresh Token:", refresh_token);
+    const userInfo = JSON.parse(Buffer.from(id_token.split(".")[1], "base64").toString());
+    const { email, sub } = userInfo;
 
-    // Store the refresh token securely (in database or file)
-    res.json({ access_token, refresh_token });
+    console.log("✅ Google User:", userInfo);
+
+    const jwtToken = jwt.sign(
+      { email, googleId: sub }, 
+      JWT_SECRET, 
+      { expiresIn: "70d" }
+    );
+
+    console.log("🔑 JWT Token:", jwtToken);
+
+    res.json({ jwtToken, refresh_token });
 
   } catch (error) {
     console.error("❌ Error exchanging code:", error.response?.data || error);
     res.status(500).json({ error: "Failed to get tokens" });
   }
+});
+
+const verifyJWT = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: "Forbidden: Invalid token" });
+  }
+};
+
+app.get("/protected", verifyJWT, (req, res) => {
+  res.json({ message: "You have access!", user: req.user });
 });
 
 if (process.env.NODE_ENV === "production") {
