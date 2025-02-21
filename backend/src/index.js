@@ -44,11 +44,11 @@ app.get("/oauth/google/callback", async (req, res) => {
   try {
     const response = await axios.post("https://oauth2.googleapis.com/token", null, {
       params: {
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
+        client_id: "23584416504-8pa46bkhrhl9nohgndgd1grn9ptisuen.apps.googleusercontent.com",
+        client_secret: "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",
         code,
         grant_type: "authorization_code",
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: "http://localhost:5001/oauth/google/callback",
       },
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
