@@ -17,10 +17,14 @@ const PORT = process.env.PORT;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET;
-const REDIRECT_URI = "http://localhost:5001/oauth/google/callback";
+const REDIRECT_URI = process.env.REDIRECT_URI || "http://localhost:5001/oauth/google/callback";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+if (!app) {
+  global.app = express();
+}
 
 app.use(express.json());
 app.use(cookieParser());
@@ -44,27 +48,27 @@ app.get("/oauth/google/callback", async (req, res) => {
   try {
     const response = await axios.post("https://oauth2.googleapis.com/token", null, {
       params: {
-        client_id: "23584416504-8pa46bkhrhl9nohgndgd1grn9ptisuen.apps.googleusercontent.com",
-        client_secret: "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",
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
         code,
         grant_type: "authorization_code",
-        redirect_uri: "http://localhost:5001/oauth/google/callback",
+        redirect_uri: REDIRECT_URI,
       },
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
     const { access_token, refresh_token, id_token } = response.data;
 
-    const userInfo = JSON.parse(Buffer.from(id_token.split(".")[1], "base64").toString());
+    const userInfo = jwt.decode(id_token);
+    if (!userInfo || !userInfo.email) {
+      return res.status(400).json({ error: "Invalid ID token received" });
+    }
+
     const { email, sub } = userInfo;
 
     console.log("✅ Google User:", userInfo);
 
-    const jwtToken = jwt.sign(
-      { email, googleId: sub }, 
-      JWT_SECRET, 
-      { expiresIn: "70d" }
-    );
+    const jwtToken = jwt.sign({ email, googleId: sub }, JWT_SECRET, { expiresIn: "7d" });
 
     console.log("🔑 JWT Token:", jwtToken);
 
@@ -103,8 +107,11 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-connectDB().then(() => {
+const startServer = async () => {
+  await connectDB();
   server.listen(PORT, () => {
-    console.log("✅ Server is running on PORT: " + PORT);
+    console.log("✅ Server is running on PORT:", PORT);
   });
-});
+};
+
+startServer();
