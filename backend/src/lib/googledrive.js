@@ -13,7 +13,11 @@ const oauth2Client = new google.auth.OAuth2(
 
 oauth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN });
 
-const drive = google.drive({ version: "v3", auth: oauth2Client });
+const drive = google.drive({
+  version: "v3",
+  auth: oauth2Client,
+  timeout: 60000
+});
 
 export const uploadChatBackup = async (chatData, userId) => {
   const fileName = `chat_backup_${userId}_${Date.now()}.json`;
@@ -28,20 +32,22 @@ export const uploadChatBackup = async (chatData, userId) => {
 
     const fileMetadata = {
       name: fileName,
-      parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+      parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
     };
     const media = {
       mimeType: "application/json",
-      body: fs.createReadStream(filePath),
+      body: fs.createReadStream(filePath)
     };
 
     const response = await drive.files.create({
       resource: fileMetadata,
       media,
-      fields: "id",
+      fields: "id"
     });
 
-    console.log(`✅ Chat backup uploaded successfully! File ID: ${response.data.id}`);
+    console.log(
+      `✅ Chat backup uploaded successfully! File ID: ${response.data.id}`
+    );
     return response.data.id;
   } catch (error) {
     console.error("❌ Error uploading chat backup:", error);
