@@ -36,6 +36,26 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+// ✅ Get All Messages Between Two Users
+export const getMessages = async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const messages = await Message.find({
+      $or: [
+        { senderId: currentUserId, receiverId: userId },
+        { senderId: userId, receiverId: currentUserId }
+      ]
+    }).sort({ createdAt: 1 });
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("❌ Error retrieving messages:", error);
+    res.status(500).json({ message: "Error retrieving messages" });
+  }
+};
+
 // ✅ Delete All Messages Between Two Users
 export const deleteMessage = async (req, res) => {
   try {
