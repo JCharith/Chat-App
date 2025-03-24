@@ -6,6 +6,7 @@ import fs from "fs";
 const storage = multer.diskStorage({});
 const upload = multer({ storage });
 
+// ✅ Send Message (Text & Image Support)
 export const sendMessage = async (req, res) => {
   try {
     const { senderId, receiverId, text } = req.body;
@@ -30,7 +31,31 @@ export const sendMessage = async (req, res) => {
 
     res.status(201).json(newMessage);
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("❌ Error sending message:", error);
     res.status(500).json({ message: "Error sending message" });
+  }
+};
+
+// ✅ Delete All Messages Between Two Users
+export const deleteMessage = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const deletedMessages = await Message.deleteMany({
+      $or: [
+        { senderId: currentUserId, receiverId: userId },
+        { senderId: userId, receiverId: currentUserId }
+      ]
+    });
+
+    if (deletedMessages.deletedCount === 0) {
+      return res.status(404).json({ message: "No messages found to delete" });
+    }
+
+    res.status(200).json({ message: "Messages deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting messages:", error);
+    res.status(500).json({ message: "Error deleting messages" });
   }
 };
