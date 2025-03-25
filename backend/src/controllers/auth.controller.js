@@ -29,16 +29,17 @@ export const signup = async (req, res) => {
     });
 
     await newUser.save();
-    generateToken(newUser._id, res); // ✅ Token is generated & stored in cookies
+    const token = generateToken(newUser._id, res);
 
     res.status(201).json({
       _id: newUser._id,
       fullName: newUser.fullName,
       email: newUser.email,
       profilePic: newUser.profilePic,
+      token,
     });
   } catch (error) {
-    console.error("❌ Signup error:", error.message);
+    console.error("Signup error:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -57,30 +58,32 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, res); // ✅ Token is generated & stored in cookies
+    const token = generateToken(user._id, res);
 
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      token,
     });
   } catch (error) {
-    console.error("❌ Login error:", error.message);
+    console.error("Login error:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 export const logout = (req, res) => {
   try {
-    res.clearCookie("jwt", {
+    res.cookie("jwt", "", {
       httpOnly: true,
       sameSite: "strict",
-      secure: process.env.NODE_ENV === "production", // ✅ Fix: secure only in production
+      secure: process.env.NODE_ENV === "production",
+      expires: new Date(0),
     });
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
-    console.error("❌ Logout error:", error.message);
+    console.error("Logout error:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -103,9 +106,17 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(updatedUser);
+    const token = generateToken(updatedUser._id, res);
+
+    res.status(200).json({
+      _id: updatedUser._id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      profilePic: updatedUser.profilePic,
+      token,
+    });
   } catch (error) {
-    console.error("❌ Update Profile error:", error.message);
+    console.error("Update Profile error:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -114,7 +125,7 @@ export const checkAuth = (req, res) => {
   try {
     res.status(200).json(req.user);
   } catch (error) {
-    console.error("❌ Check Auth error:", error.message);
+    console.error("Check Auth error:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
