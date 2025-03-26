@@ -4,8 +4,8 @@ import { uploadChatBackup } from "../lib/googledrive.js";
 
 export const backupUserMessages = async (req, res) => {
   try {
-    const userId = req.user._id; // ✅ Get userId from authenticated JWT token
-
+    // const userId = req.user._id; // ✅ Get userId from authenticated JWT token
+    const {userId:userId} = req.params;
     console.log(`🔄 Fetching messages for user: ${userId}...`);
 
     // ✅ Ensure userId is converted to a MongoDB ObjectId

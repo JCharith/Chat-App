@@ -22,7 +22,7 @@ const protectRoute = async (req, res, next) => {
     }
 
     req.user = user;
-
+    console.log("in auth middleware, userId: ",String(user._id))
     next();
   } catch (error) {
     console.log("Error in protectRoute middleware: ", error.message);

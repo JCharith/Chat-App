@@ -38,7 +38,7 @@ export const uploadChatBackup = async (chatData, userId) => {
       mimeType: "application/json",
       body: fs.createReadStream(filePath)
     };
-
+    
     const response = await drive.files.create({
       resource: fileMetadata,
       media,
