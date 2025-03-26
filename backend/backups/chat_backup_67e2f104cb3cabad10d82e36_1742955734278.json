@@ -1,0 +1,32 @@
+[
+  {
+    "_id": "67e2f133cb3cabad10d82e39",
+    "senderId": "67e2efcfcb3cabad10d82e31",
+    "receiverId": "67e2f104cb3cabad10d82e36",
+    "text": "Hello !",
+    "image": null,
+    "createdAt": "2025-03-25T18:08:51.594Z",
+    "updatedAt": "2025-03-25T18:08:51.594Z",
+    "__v": 0
+  },
+  {
+    "_id": "67e364bf47c1d5a83fc57b74",
+    "senderId": "67e2efcfcb3cabad10d82e31",
+    "receiverId": "67e2f104cb3cabad10d82e36",
+    "text": "Hello !",
+    "image": null,
+    "createdAt": "2025-03-26T02:21:51.237Z",
+    "updatedAt": "2025-03-26T02:21:51.237Z",
+    "__v": 0
+  },
+  {
+    "_id": "67e364c347c1d5a83fc57b77",
+    "senderId": "67e2efcfcb3cabad10d82e31",
+    "receiverId": "67e2f104cb3cabad10d82e36",
+    "text": "Hello !",
+    "image": null,
+    "createdAt": "2025-03-26T02:21:55.037Z",
+    "updatedAt": "2025-03-26T02:21:55.037Z",
+    "__v": 0
+  }
+]
