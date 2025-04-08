@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import protectRoute from "../middleware/auth.middleware.js";
+import uplooad from "../middleware/upload.middleware.js";
 import { getMessages, sendMessage, deleteMessage } from "../controllers/message.controller.js";
 import { getUsersForSidebar } from "../controllers/user.controller.js"; // ✅ FIXED: Correct import
 import { backupUserMessages } from "../controllers/backup.controller.js";
