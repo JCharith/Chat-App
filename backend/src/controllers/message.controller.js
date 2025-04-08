@@ -3,42 +3,44 @@ import cloudinary from "../lib/cloudinary.js";
 import multer from "multer";
 import fs from "fs";
 
+// Multer setup
 const storage = multer.diskStorage({});
-const upload = multer({ storage });
+export const upload = multer({ storage });
 
 // ✅ Send Message (Text & Image Support)
 export const sendMessage = async (req, res) => {
   try {
     const { senderId, receiverId, text } = req.body;
-    let imageUrl = null;
+    let imageUrl = "";
 
+    // Handle image upload if present
     if (req.file) {
       try {
-        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        const result = await cloudinary.uploader.upload(req.file.path, {
           folder: "chat_images",
           resource_type: "auto",
         });
-        imageUrl = uploadResult.secure_url;
-        fs.unlinkSync(req.file.path);
-      } catch (uploadError) {
-        console.error("Cloudinary Upload Error:", uploadError);
-        return res.status(500).json({ message: "Error uploading image" });
+        imageUrl = result.secure_url;
+        fs.unlinkSync(req.file.path); // Delete local file
+      } catch (err) {
+        console.error("Cloudinary Upload Error:", err);
+        return res.status(500).json({ message: "Image upload failed" });
       }
     }
 
-    const newMessage = new Message({
+    // Save message to DB
+    const message = new Message({
       senderId,
       receiverId,
       text,
-      image: imageUrl || "",
+      image: imageUrl,
     });
 
-    await newMessage.save();
-
-    res.status(201).json(newMessage);
-  } catch (error) {
-    console.error("Error sending message:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    await message.save();
+    res.status(201).json(message);
+  } catch (err) {
+    console.error("Send Message Error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -49,20 +51,20 @@ export const getMessages = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { id: userId } = req.params;
+    const { id: otherUserId } = req.params;
     const currentUserId = req.user._id;
 
     const messages = await Message.find({
       $or: [
-        { senderId: currentUserId, receiverId: userId },
-        { senderId: userId, receiverId: currentUserId },
+        { senderId: currentUserId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: currentUserId },
       ],
     }).sort({ createdAt: 1 });
 
     res.status(200).json(messages);
-  } catch (error) {
-    console.error("Error retrieving messages:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+  } catch (err) {
+    console.error("Get Messages Error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -73,24 +75,23 @@ export const deleteMessage = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { userId } = req.params;
+    const { userId: otherUserId } = req.params;
     const currentUserId = req.user._id;
 
-    const deletedMessages = await Message.deleteMany({
+    const result = await Message.deleteMany({
       $or: [
-        { senderId: currentUserId, receiverId: userId },
-        { senderId: userId, receiverId: currentUserId },
+        { senderId: currentUserId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: currentUserId },
       ],
     });
 
-    if (deletedMessages.deletedCount === 0) {
+    if (result.deletedCount === 0) {
       return res.status(404).json({ message: "No messages found to delete" });
     }
 
     res.status(200).json({ message: "Messages deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting messages:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+  } catch (err) {
+    console.error("Delete Messages Error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-  
